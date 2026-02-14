@@ -1672,7 +1672,7 @@
                 sfxGain = ctx.createGain();
                 master.gain.value = masterVol;
 
-                musicGain.gain.value = 0.25;
+                musicGain.gain.value = 0.9;
                 sfxGain.gain.value = 0.9;
 
                 musicGain.connect(master);
@@ -1687,7 +1687,7 @@
 
             function setMusic(on) {
                 musicOn = !!on;
-                if (musicGain) musicGain.gain.value = musicOn ? 0.25 : 0.0;
+                if (musicGain) musicGain.gain.value = musicOn ? 0.9 : 0.0;
             }
 
             function setSfx(on) {
