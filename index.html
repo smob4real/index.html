@@ -1647,7 +1647,7 @@
             let started = false;
             let musicOn = true;
             let sfxOn = true;
-            let masterVol = 0.7;
+            let masterVol = 0.9;
             let sfxPack = 'arcade';
 
             let musicTimer = null;
@@ -1673,7 +1673,7 @@
                 master.gain.value = masterVol;
 
                 musicGain.gain.value = 0.9;
-                sfxGain.gain.value = 0.9;
+                sfxGain.gain.value = 0.25;
 
                 musicGain.connect(master);
                 sfxGain.connect(master);
