@@ -2494,30 +2494,34 @@ function startBattle() {
         }
 
        function togglePause(){
-    if ($('game-container').classList.contains('hidden')) return;
-    if (!gameActive) return;
+  if ($('game-container').classList.contains('hidden')) return;
+  if (!gameActive) return;
 
-    AudioSys.play('click');
+  AudioSys.play('click');
 
-    // ONLINE: Host controls pause; Guest sends request to host
-    if (onlineMode) {
-        if (!onlineConnected) return;
+  // ONLINE: Host is authority
+  if (onlineMode) {
+    if (!onlineConnected) return;
 
-        if (isHost) {
-            setPaused(!paused);
-            broadcastState(); // <-- IMPORTANT: sync pause state
-            sendDC({ t: 'pause_set', paused }); // optional explicit message
-        } else {
-            // guest asks host to toggle pause
-            sendDC({ t: 'pause_toggle' });
-        }
-        return;
+    if (isHost) {
+      // Host toggles pause locally
+      setPaused(!paused);
+
+      // IMPORTANT: send explicit pause state every time (pause AND resume)
+      sendDC({ t: 'pause_set', paused });
+
+      // Also broadcast full state (helps keep everything in sync)
+      broadcastState();
+    } else {
+      // Guest requests host to toggle
+      sendDC({ t: 'pause_toggle' });
     }
+    return;
+  }
 
-    // OFFLINE
-    setPaused(!paused);
+  // OFFLINE
+  setPaused(!paused);
 }
-
         // Reset battle (keep names/characters, restart at level 1)
         function resetBattle() {
             AudioSys.play('click');
@@ -2756,6 +2760,27 @@ function startBattle() {
 
         function handleOnlineMessage(msg){
             if (!msg || !msg.t) return;
+            // ================= PAUSE SYNC =================
+
+// Guest asks host to toggle pause
+if (msg.t === 'pause_toggle') {
+  if (!isHost) return;
+
+  setPaused(!paused);              // toggle pause on host
+  sendDC({ t: 'pause_set', paused }); // tell guest the new state
+  broadcastState();                // keep everything in sync
+  return;
+}
+
+// Host forces pause or resume on guest
+if (msg.t === 'pause_set') {
+  if (isHost) return;
+
+  setPaused(!!msg.paused);         // APPLY pause OR resume
+  return;
+}
+
+// ================= END PAUSE SYNC =================
 
             // Lobby sync
             if (msg.t === 'lobby'){
