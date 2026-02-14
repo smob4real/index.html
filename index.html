@@ -2493,13 +2493,30 @@ function startBattle() {
             btns.forEach(b => b.disabled = paused || (vsCPU && b.closest('.player2-section')));
         }
 
-        function togglePause(){
-            if ($('game-container').classList.contains('hidden')) return;
-            if (!gameActive) return;
-            
-            AudioSys.play('click');
+       function togglePause(){
+    if ($('game-container').classList.contains('hidden')) return;
+    if (!gameActive) return;
+
+    AudioSys.play('click');
+
+    // ONLINE: Host controls pause; Guest sends request to host
+    if (onlineMode) {
+        if (!onlineConnected) return;
+
+        if (isHost) {
             setPaused(!paused);
+            broadcastState(); // <-- IMPORTANT: sync pause state
+            sendDC({ t: 'pause_set', paused }); // optional explicit message
+        } else {
+            // guest asks host to toggle pause
+            sendDC({ t: 'pause_toggle' });
         }
+        return;
+    }
+
+    // OFFLINE
+    setPaused(!paused);
+}
 
         // Reset battle (keep names/characters, restart at level 1)
         function resetBattle() {
@@ -2816,7 +2833,25 @@ function startBattle() {
                 if (onlineMode && isHost) broadcastState();
                 return;
             }
+// Guest -> host: request pause toggle
+if (msg.t === 'pause_toggle') {
+    if (!isHost) return;
 
+    // Host toggles pause and syncs
+    setPaused(!paused);
+    broadcastState();
+    sendDC({ t: 'pause_set', paused });
+    return;
+}
+
+// Host -> guest: set pause state explicitly
+if (msg.t === 'pause_set') {
+    if (isHost) return;
+
+    // Apply pause visually and functionally
+    setPaused(!!msg.paused);
+    return;
+}
             // Host -> guest: state sync
             if (msg.t === 'state'){
                 if (isHost) return;
@@ -2886,6 +2921,7 @@ function startBattle() {
 
             gameActive = !!st.gameActive;
             paused = !!st.paused;
+            setPaused(paused);
 
             // UI updates
             updateLevelDisplay();
