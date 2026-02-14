@@ -2858,31 +2858,6 @@ if (msg.t === 'pause_set') {
                 if (onlineMode && isHost) broadcastState();
                 return;
             }
-// Guest -> host: request pause toggle
-if (msg.t === 'pause_toggle') {
-    if (!isHost) return;
-
-    // Host toggles pause and syncs
-    setPaused(!paused);
-    broadcastState();
-    sendDC({ t: 'pause_set', paused });
-    return;
-}
-
-// Host -> guest: set pause state explicitly
-if (msg.t === 'pause_set') {
-    if (isHost) return;
-
-    // Apply pause visually and functionally
-    setPaused(!!msg.paused);
-    return;
-}
-            // Host -> guest: state sync
-            if (msg.t === 'state'){
-                if (isHost) return;
-                applyHostState(msg.state, false);
-                return;
-            }
 
             // Host -> guest: go home / reset
             if (msg.t === 'home'){
@@ -3221,7 +3196,7 @@ if (msg.t === 'pause_set') {
             const resumeBtn = $('resume-btn');
             const pauseHomeBtn = $('pause-home-btn');
             if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
-            if (resumeBtn) resumeBtn.addEventListener('click', () => setPaused(false));
+            if (resumeBtn) resumeBtn.addEventListener('click', () => {   if (!onlineMode) {     setPaused(false);     return;   }    // ONLINE:   if (!onlineConnected) return;    if (isHost) {     setPaused(false);     sendDC({ t: 'pause_set', paused: false });     broadcastState();   } else {     // Guest cannot force resume; request host to toggle     sendDC({ t: 'pause_toggle' });   } });
             if (pauseHomeBtn) pauseHomeBtn.addEventListener('click', () => { setPaused(false); goHome(); });
 
 
